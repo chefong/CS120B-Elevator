@@ -5,6 +5,62 @@
 #include <stdio.h>
 #include "io.c"
 
+// Global variables
+unsigned char floorNumber = 1;
+
+// Returns '\0' if no key pressed, else returns char '1', '2', ... '9', 'A', ...
+// If multiple keys pressed, returns leftmost-topmost one
+// Keypad must be connected to port C
+/* Keypad arrangement
+        PC4 PC5 PC6 PC7
+   col  1   2   3   4
+row
+PC0 1   1 | 2 | 3 | A
+PC1 2   4 | 5 | 6 | B
+PC2 3   7 | 8 | 9 | C
+PC3 4   * | 0 | # | D
+*/
+unsigned char GetKeypadKey() {
+
+	PORTC = 0xEF; // Enable col 4 with 0, disable others with 1’s
+	asm("nop"); // add a delay to allow PORTC to stabilize before checking
+	if (GetBit(PINC,0)==0) { return('1'); }
+	if (GetBit(PINC,1)==0) { return('4'); }
+	if (GetBit(PINC,2)==0) { return('7'); }
+	if (GetBit(PINC,3)==0) { return('*'); }
+
+	// Check keys in col 2
+	PORTC = 0xDF; // Enable col 5 with 0, disable others with 1’s
+	asm("nop"); // add a delay to allow PORTC to stabilize before checking
+	if (GetBit(PINC,0)==0) { return('2'); }
+	if (GetBit(PINC,1)==0) { return('5'); }
+	if (GetBit(PINC,2)==0) { return('8'); }
+	if (GetBit(PINC,3)==0) { return('0'); }
+	// ... *****FINISH*****
+
+	// Check keys in col 3
+	PORTC = 0xBF; // Enable col 6 with 0, disable others with 1’s
+	asm("nop"); // add a delay to allow PORTC to stabilize before checking
+	// ... *****FINISH*****
+	if (GetBit(PINC,0)==0) { return('3'); }
+	if (GetBit(PINC,1)==0) { return('6'); }
+	if (GetBit(PINC,2)==0) { return('9'); }
+	if (GetBit(PINC,3)==0) { return('#'); }
+
+	// Check keys in col 4	
+	// ... *****FINISH*****
+	PORTC = 0x7F;
+	asm("nop"); // add a delay to allow PORTC to stabilize before checking
+	// ... *****FINISH*****
+	if (GetBit(PINC,0)==0) { return('A'); }
+	if (GetBit(PINC,1)==0) { return('B'); }
+	if (GetBit(PINC,2)==0) { return('C'); }
+	if (GetBit(PINC,3)==0) { return('D'); }
+
+	return('\0'); // default value
+
+}
+
 // Struct for Tasks represent a running process in our simple real-time operating system.
 typedef struct _task {
 	signed char state; //Task's current state
@@ -17,53 +73,44 @@ typedef struct _task {
 enum SM1_States { SM1_Init, SM1_Wait, SM1_On };
 
 int SMTick1(int state) {
-	unsigned char button = ~PINA & 0x01;
-	unsigned char led = ~PINB & 0x02;
+	// unsigned char button = ~PINA & 0x01;
+	unsigned char display = ~PINB & 0x02;
+	unsigned char press = GetKeypadKey();
 	
 	switch (state) {
 		case SM1_Init:
 			state = SM1_Wait;
 			break;
 		case SM1_Wait:
-			if (!button) {
-				state = SM1_Wait;
+			if (press == '1') {
+				floorNumber = 1;
 			}
-			else {
-				state = SM1_On;
+			else if (press == '2') {
+				floorNumber = 2;
 			}
-			break;
-		case SM1_On:
-			if (button) {
-				state = SM1_On;
-			}
-			else {
-				state = SM1_Wait;
-			}
+			state = SM1_Wait;
 			break;
 		default:
 			break;
 	}
 	
-	switch (state) {
-		case SM1_On:
-			led = 0;
-			break;
-		case SM1_Wait:
-			led = 3;
-			break;
-		default:
-			break;
+	if (floorNumber == 1) {
+		// Assign display to value of segments to turn on number "1"
+	}
+	else if (floorNumber == 2) {
+		// Assign display to value of segments to turn on number "2" 
 	}
 	
-	PORTB = led;
+	PORTB = display; // Assign PORTB to the floor number value
 
 	return state;
 }
 
 int main()
 {
-	DDRB = 0xFF; PORTB = 0x00;
-	DDRA = 0x00; PORTA = 0xFF;
+	DDRA = 0x00; PORTA = 0xFF; // Input
+	DDRB = 0xFF; PORTB = 0x00; // Output
+	DDRC = 0xF0; PORTC = 0x0F; // PC7..4 outputs init 0s, PC3..0 inputs init 1s
 
 	// Period for the tasks
 	unsigned long int SMTick1_calc = 100;
