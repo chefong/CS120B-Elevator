@@ -73,8 +73,7 @@ typedef struct _task {
 enum SM1_States { SM1_Init, SM1_Wait, SM1_On };
 
 int SMTick1(int state) {
-	// unsigned char button = ~PINA & 0x01;
-	unsigned char display = ~PINB & 0x02;
+	unsigned char display = ~PIND; // Set D0 - D5 as outputs
 	unsigned char press = GetKeypadKey();
 	
 	switch (state) {
@@ -96,12 +95,14 @@ int SMTick1(int state) {
 	
 	if (floorNumber == 1) {
 		// Assign display to value of segments to turn on number "1"
+		display = 0xF6;
 	}
 	else if (floorNumber == 2) {
 		// Assign display to value of segments to turn on number "2" 
+		display = 0xC8;
 	}
 	
-	PORTB = display; // Assign PORTB to the floor number value
+	PORTD = display; // Assign PORTB to the floor number value stored in display
 
 	return state;
 }
@@ -109,7 +110,7 @@ int SMTick1(int state) {
 int main()
 {
 	DDRA = 0x00; PORTA = 0xFF; // Input
-	DDRB = 0xFF; PORTB = 0x00; // Output
+	DDRD = 0xFF; PORTD = 0x00; // Output
 	DDRC = 0xF0; PORTC = 0x0F; // PC7..4 outputs init 0s, PC3..0 inputs init 1s
 
 	// Period for the tasks
@@ -122,7 +123,8 @@ int main()
 	static task task1;
 	task *tasks[] = { &task1 };
 	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
-
+	
+	// BCD to 7 Segment and Keypad task
 	task1.state = SM1_Init; //Task initial state.
 	task1.period = SMTick1_period; //Task Period.
 	task1.elapsedTime = SMTick1_period; //Task current elapsed time.
