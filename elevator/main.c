@@ -10,8 +10,8 @@ unsigned char one = 0xF6;
 unsigned char two = 0xC8;
 unsigned char off = 0xFF;
 unsigned char floorNumber = 1;
+unsigned char display;
 unsigned char blinkTime = 0;
-unsigned char display = 1;
 
 // Function that calculates and returns the GCD of 2 long ints
 unsigned long int findGCD(unsigned long int a, unsigned long int b)
@@ -129,7 +129,6 @@ enum SM2_States { SM2_Init, SM2_Wait, SM2_BlinkOn, SM2_BlinkOff };
 
 int SMTick2(int state) {
 	unsigned char button = ~PINA & 0x01;
-	unsigned char blinkDisplay = display;
 	
 	switch (state) {
 		case SM2_Init:
