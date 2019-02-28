@@ -6,12 +6,13 @@
 #include "io.c"
 
 // Global variables
-unsigned char one = 0xF6;
-unsigned char two = 0xC8;
-unsigned char off = 0xFF;
-unsigned char floorNumber = 1;
+const unsigned char one = 0xF6; // Maps to "1" on the BCD to 7 segment display
+const unsigned char two = 0xC8; // Maps to "2" on the BCD to 7 segment display
+const unsigned char off = 0xFF; // Displays nothing on the BCD to 7 segment display
+unsigned char floorNumber = 1; 
 unsigned char display;
 unsigned char blinkTime = 0;
+unsigned char moving = 0;
 
 // Function that calculates and returns the GCD of 2 long ints
 unsigned long int findGCD(unsigned long int a, unsigned long int b)
@@ -40,7 +41,7 @@ PC3 4   * | 0 | # | D
 */
 unsigned char GetKeypadKey() {
 
-	PORTC = 0xEF; // Enable col 4 with 0, disable others with 1’s
+	PORTC = 0xEF; // Enable col 4 with 0, disable others with 1ï¿½s
 	asm("nop"); // add a delay to allow PORTC to stabilize before checking
 	if (GetBit(PINC,0)==0) { return('1'); }
 	if (GetBit(PINC,1)==0) { return('4'); }
@@ -48,7 +49,7 @@ unsigned char GetKeypadKey() {
 	if (GetBit(PINC,3)==0) { return('*'); }
 
 	// Check keys in col 2
-	PORTC = 0xDF; // Enable col 5 with 0, disable others with 1’s
+	PORTC = 0xDF; // Enable col 5 with 0, disable others with 1ï¿½s
 	asm("nop"); // add a delay to allow PORTC to stabilize before checking
 	if (GetBit(PINC,0)==0) { return('2'); }
 	if (GetBit(PINC,1)==0) { return('5'); }
@@ -57,7 +58,7 @@ unsigned char GetKeypadKey() {
 	// ... *****FINISH*****
 
 	// Check keys in col 3
-	PORTC = 0xBF; // Enable col 6 with 0, disable others with 1’s
+	PORTC = 0xBF; // Enable col 6 with 0, disable others with 1ï¿½s
 	asm("nop"); // add a delay to allow PORTC to stabilize before checking
 	// ... *****FINISH*****
 	if (GetBit(PINC,0)==0) { return('3'); }
@@ -129,13 +130,17 @@ enum SM2_States { SM2_Init, SM2_Wait, SM2_BlinkOn, SM2_BlinkOff };
 
 int SMTick2(int state) {
 	unsigned char button = ~PINA & 0x01;
+
+	// Variable used later to detect if elevator has reached the top or bottom.
+	// Once it does, then stop blinking (go back to Wait state)
+	unsigned char sensor;
 	
 	switch (state) {
 		case SM2_Init:
 			state = SM2_Wait;
 			break;
 		case SM2_Wait:
-			if (button) {
+			if (button && !moving) { // If the button is pressed AND the elevator isn't moving
 				state = SM2_BlinkOn;
 			}
 			else {
@@ -143,7 +148,7 @@ int SMTick2(int state) {
 			}
 			break;
 		case SM2_BlinkOn:
-			if (blinkTime >= 2) {
+			if (blinkTime >= 2) { // Switch to off after 200 ms
 				state = SM2_BlinkOff;
 				blinkTime = 0;
 			}
@@ -152,7 +157,7 @@ int SMTick2(int state) {
 			}
 			break;
 		case SM2_BlinkOff:
-			if (blinkTime >= 2) {
+			if (blinkTime >= 2) { // Switch to on after 200 ms
 				state = SM2_BlinkOn;
 				blinkTime = 0;
 			}
