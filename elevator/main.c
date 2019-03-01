@@ -13,6 +13,7 @@ unsigned char floorNumber = 1;
 unsigned char display;
 unsigned char blinkTime = 0;
 unsigned char moving = 0;
+unsigned char motor = 0;
 
 // Function that calculates and returns the GCD of 2 long ints
 unsigned long int findGCD(unsigned long int a, unsigned long int b)
@@ -129,11 +130,11 @@ int SMTick1(int state) {
 enum SM2_States { SM2_Init, SM2_Wait, SM2_BlinkOn, SM2_BlinkOff };
 
 int SMTick2(int state) {
-	unsigned char button = ~PINA & 0x01;
-
 	// Variable used later to detect if elevator has reached the top or bottom.
 	// Once it does, then stop blinking (go back to Wait state)
 	unsigned char sensor;
+	
+	unsigned char button = ~PINA & 0x01;
 	
 	switch (state) {
 		case SM2_Init:
@@ -192,19 +193,64 @@ int SMTick2(int state) {
 	return state;
 }
 
+//Enumeration of states.
+enum SM3_States { SM3_Init, SM3_WaitOne, SM3_WaitTwo, SM3_MoveUp, SM3_MoveDown };
+
+int SMTick3(int state) {
+	unsigned char button = ~PINA & 0x01;
+	
+	switch (state) {
+		case SM3_Init:
+			if (floorNumber == 1) {
+				state = SM3_WaitOne;
+			}
+			else {
+				state = SM3_WaitTwo;
+			}
+			break;
+		case SM3_WaitOne:
+			if (button) { // if the button is pressed, turn on the motor
+				motor = 1;
+				state = SM3_MoveUp;
+			}
+			state = SM3_WaitOne;
+			break;
+		case SM3_WaitTwo:
+			if (button) { // if the button is pressed, turn on the motor
+				motor = 1;
+				state = SM3_MoveDown;
+			}
+			state = SM3_WaitTwo;
+			break;
+		case SM3_MoveUp:
+			break;
+		case SM3_MoveDown:
+			break;
+		default:
+			break;
+	}
+	
+	PORTB = motor;
+	
+	return state;
+}
+
 int main()
 {
 	DDRA = 0x00; PORTA = 0xFF; // Input
 	DDRD = 0xFF; PORTD = 0x00; // Output
+	DDRB = 0xFF; PORTB = 0x00; // Output
 	DDRC = 0xF0; PORTC = 0x0F; // PC7..4 outputs init 0s, PC3..0 inputs init 1s
-
+	
 	// Period for the tasks
 	unsigned long int SMTick1_calc = 100;
 	unsigned long int SMTick2_calc = 500;
+	unsigned long int SMTick3_calc = 100;
 	
 	//Calculating GCD
 	unsigned long int tmpGCD = 1;
 	tmpGCD = findGCD(SMTick1_calc, SMTick2_calc);
+	tmpGCD = findGCD(tmpGCD, SMTick3_calc);
 	
 	//Greatest common divisor for all tasks or smallest time unit for tasks.
 	unsigned long int GCD = tmpGCD;
@@ -212,11 +258,13 @@ int main()
 	//Recalculate GCD periods for scheduler
 	unsigned long int SMTick1_period = SMTick1_calc/GCD;
 	unsigned long int SMTick2_period = SMTick2_calc/GCD;
+	unsigned long int SMTick3_period = SMTick3_calc/GCD;
 
 	//Declare an array of tasks
 	static task task1;
 	static task task2;
-	task *tasks[] = { &task1, &task2 };
+	static task task3;
+	task *tasks[] = { &task1, &task2, &task3 };
 	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 	
 	// BCD to 7 Segment and Keypad task
@@ -225,11 +273,17 @@ int main()
 	task1.elapsedTime = SMTick1_period; //Task current elapsed time.
 	task1.TickFct = &SMTick1; //Function pointer for the tick.
 	
-	// Blink and DC Motor task
+	// Blinking task
 	task2.state = SM2_Init; //Task initial state.
 	task2.period = SMTick2_period; //Task Period.
 	task2.elapsedTime = SMTick2_period; //Task current elapsed time.
 	task2.TickFct = &SMTick2; //Function pointer for the tick.
+	
+	// DC Motor task
+	task3.state = SM3_Init; //Task initial state.
+	task3.period = SMTick3_period; //Task Period.
+	task3.elapsedTime = SMTick3_period; //Task current elapsed time.
+	task3.TickFct = &SMTick3; //Function pointer for the tick.
 
 	// Set the timer and turn it on
 	TimerSet(GCD);
