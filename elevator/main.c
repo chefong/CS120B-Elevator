@@ -13,7 +13,8 @@ unsigned char floorNumber = 1;
 unsigned char display;
 unsigned char blinkTime = 0;
 unsigned char moving = 0;
-unsigned char motor = 0;
+unsigned char output3 = 0;
+unsigned char output4 = 0;
 
 // Function that calculates and returns the GCD of 2 long ints
 unsigned long int findGCD(unsigned long int a, unsigned long int b)
@@ -210,14 +211,16 @@ int SMTick3(int state) {
 			break;
 		case SM3_WaitOne:
 			if (button) { // if the button is pressed, turn on the motor
-				motor = 1;
+				output3 = 1;
+				output4 = 0;
 				state = SM3_MoveUp;
 			}
 			state = SM3_WaitOne;
 			break;
 		case SM3_WaitTwo:
 			if (button) { // if the button is pressed, turn on the motor
-				motor = 1;
+				output3 = 0;
+				output4 = 1;
 				state = SM3_MoveDown;
 			}
 			state = SM3_WaitTwo;
@@ -230,7 +233,7 @@ int SMTick3(int state) {
 			break;
 	}
 	
-	PORTB = motor;
+	PORTB = 0x03 & (output3 + (output4 << 1));
 	
 	return state;
 }
