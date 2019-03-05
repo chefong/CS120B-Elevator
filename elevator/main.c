@@ -15,6 +15,7 @@ unsigned char blinkTime = 0;
 unsigned char moving = 0;
 unsigned char output3 = 0;
 unsigned char output4 = 0;
+unsigned char moveTime = 0;
 
 // Function that calculates and returns the GCD of 2 long ints
 unsigned long int findGCD(unsigned long int a, unsigned long int b)
@@ -131,10 +132,6 @@ int SMTick1(int state) {
 enum SM2_States { SM2_Init, SM2_Wait, SM2_BlinkOn, SM2_BlinkOff };
 
 int SMTick2(int state) {
-	// Variable used later to detect if elevator has reached the top or bottom.
-	// Once it does, then stop blinking (go back to Wait state)
-	unsigned char sensor;
-	
 	unsigned char button = ~PINA & 0x01;
 	
 	switch (state) {
@@ -195,39 +192,47 @@ int SMTick2(int state) {
 }
 
 //Enumeration of states.
-enum SM3_States { SM3_Init, SM3_WaitOne, SM3_WaitTwo, SM3_MoveUp, SM3_MoveDown };
+enum SM3_States { SM3_Init, SM3_Wait, SM3_MoveUp, SM3_MoveDown };
 
 int SMTick3(int state) {
 	unsigned char button = ~PINA & 0x01;
 	
 	switch (state) {
 		case SM3_Init:
-			if (floorNumber == 1) {
-				state = SM3_WaitOne;
-			}
-			else {
-				state = SM3_WaitTwo;
-			}
+			state = SM3_Wait;
 			break;
-		case SM3_WaitOne:
+		case SM3_Wait:
 			if (button) { // if the button is pressed, turn on the motor
-				output3 = 1;
-				output4 = 0;
 				state = SM3_MoveUp;
 			}
-			state = SM3_WaitOne;
-			break;
-		case SM3_WaitTwo:
-			if (button) { // if the button is pressed, turn on the motor
-				output3 = 0;
-				output4 = 1;
-				state = SM3_MoveDown;
+			else {
+				state = SM3_Wait;
 			}
-			state = SM3_WaitTwo;
 			break;
 		case SM3_MoveUp:
+			if (moveTime < 50) { // Turn on motor for 5 seconds
+				state = SM3_MoveUp;
+			}
+			else {
+				state = SM3_Wait;
+			}
 			break;
 		case SM3_MoveDown:
+			break;
+		default:
+			break;
+	}
+
+	switch (state) {
+		case SM3_MoveUp:
+			output3 = 1;
+			output4 = 0;
+			moveTime++;
+			break;
+		case SM3_Wait:
+			output3 = 0;
+			output4 = 0;
+			moveTime = 0;
 			break;
 		default:
 			break;
