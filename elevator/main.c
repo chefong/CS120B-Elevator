@@ -141,13 +141,17 @@ int SMTick2(int state) {
 		case SM2_Wait:
 			if (button && !moving) { // If the button is pressed AND the elevator isn't moving
 				state = SM2_BlinkOn;
+				moving = 1;
 			}
 			else {
 				state = SM2_Wait;
 			}
 			break;
 		case SM2_BlinkOn:
-			if (blinkTime >= 2) { // Switch to off after 200 ms
+			if (!moving) { // Stop blinking once the motor stops and go back to wait state
+				state = SM2_Wait;
+			}
+			else if (blinkTime >= 2) { // Switch to off after 200 ms
 				state = SM2_BlinkOff;
 				blinkTime = 0;
 			}
@@ -233,6 +237,7 @@ int SMTick3(int state) {
 			output3 = 0;
 			output4 = 0;
 			moveTime = 0;
+			moving = 0;
 			break;
 		default:
 			break;
