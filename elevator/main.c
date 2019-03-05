@@ -4,6 +4,7 @@
 #include <timer.h>
 #include <stdio.h>
 #include "io.c"
+#include <usart_ATmega1284.h>
 
 // Global variables
 const unsigned char one = 0xF6; // Maps to "1" on the BCD to 7 segment display
@@ -196,7 +197,7 @@ int SMTick2(int state) {
 }
 
 //Enumeration of states.
-enum SM3_States { SM3_Init, SM3_Wait, SM3_MoveUp, SM3_MoveDown };
+enum SM3_States { SM3_Init, SM3_Wait, SM3_MoveUpOne, SM3_MoveUpTwo, SM3_MoveDown };
 
 int SMTick3(int state) {
 	unsigned char button = ~PINA & 0x01;
@@ -207,15 +208,28 @@ int SMTick3(int state) {
 			break;
 		case SM3_Wait:
 			if (button) { // if the button is pressed, turn on the motor
-				state = SM3_MoveUp;
+				if (floorNumber == 1) {
+					state = SM3_MoveUpOne;
+				}
+				else {
+					state = SM3_MoveUpTwo;
+				}
 			}
 			else {
 				state = SM3_Wait;
 			}
 			break;
-		case SM3_MoveUp:
+		case SM3_MoveUpTwo:
 			if (moveTime < 50) { // Turn on motor for 5 seconds
-				state = SM3_MoveUp;
+				state = SM3_MoveUpTwo;
+			}
+			else {
+				state = SM3_Wait;
+			}
+			break;
+		case SM3_MoveUpOne:
+			if (moveTime < 20) { // Turn on motor for 5 seconds
+				state = SM3_MoveUpOne;
 			}
 			else {
 				state = SM3_Wait;
@@ -228,7 +242,12 @@ int SMTick3(int state) {
 	}
 
 	switch (state) {
-		case SM3_MoveUp:
+		case SM3_MoveUpOne:
+			output3 = 1;
+			output4 = 0;
+			moveTime++;
+			break;
+		case SM3_MoveUpTwo:
 			output3 = 1;
 			output4 = 0;
 			moveTime++;
