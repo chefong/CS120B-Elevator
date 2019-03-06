@@ -320,6 +320,10 @@ int main()
 	// Set the timer and turn it on
 	TimerSet(GCD);
 	TimerOn();
+	
+	// Initialize USART
+	initUSART(0);
+	initUSART(1);
 
 	unsigned short i; // Scheduler for-loop iterator
 	while(1) {
