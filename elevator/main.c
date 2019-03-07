@@ -210,7 +210,7 @@ int SMTick3(int state) {
 			state = SM3_Wait;
 			break;
 		case SM3_Wait:
-			if (button) { // if the button is pressed, turn on the motor to move up
+			if (button) {
 				if (floorNumber == 2 && currentFloor == 1) { // check if I'm on the 1st floor before moving up
 					state = SM3_MoveUp;
 				}
@@ -225,15 +225,21 @@ int SMTick3(int state) {
 				state = SM3_Wait;
 			}
 			break;
-		case SM3_MoveUpOne:
-			if (moveTime < 30) { // Turn on motor for 3 seconds
-				state = SM3_MoveUpOne;
+		case SM3_MoveUp :
+			if (moveTime < 20) { // Spin motor clockwise for 2 seconds
+				state = SM3_MoveUp;
 			}
 			else {
 				state = SM3_Wait;
 			}
 			break;
 		case SM3_MoveDown:
+			if (moveTime < 20) { // Spin motor counterclockwise for 2 seconds
+				state = SM3_MoveDown;
+			}
+			else {
+				state = SM3_Wait;
+			}
 			break;
 		default:
 			break;
