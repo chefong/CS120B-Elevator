@@ -115,17 +115,19 @@ int SMTick1(int state) {
 			break;
 	}
 	
-	if (floorNumber == 1) {
-		// Assign display to value of segments to turn on number "1"
-		display = one;
-	}
-	else if (floorNumber == 2) {
-		// Assign display to value of segments to turn on number "2" 
-		display = two;
+	if (USART_IsSendReady(0)) {
+		if (floorNumber == 1) {
+			// Assign display to value of segments to turn on number "1"
+			//display = one;
+			USART_Send(one, 0);
+		}
+		else if (floorNumber == 2) {
+			// Assign display to value of segments to turn on number "2" 
+			//display = two;
+			USART_Send(two, 0);
+		}
 	}
 	
-	PORTD = display; // Assign PORTB to the floor number value stored in display
-
 	return state;
 }
 
