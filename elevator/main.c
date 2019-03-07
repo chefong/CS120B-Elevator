@@ -11,6 +11,7 @@ const unsigned char one = 0xF6; // Maps to "1" on the BCD to 7 segment display
 const unsigned char two = 0xC8; // Maps to "2" on the BCD to 7 segment display
 const unsigned char off = 0xFF; // Displays nothing on the BCD to 7 segment display
 unsigned char floorNumber = 1; 
+unsigned char currentFloor = 1;
 unsigned char display;
 unsigned char blinkTime = 0;
 unsigned char moving = 0;
@@ -193,13 +194,13 @@ int SMTick2(int state) {
 			break;	
 	}
 	
-	PORTD = display;
+	//PORTD = display;
 	
 	return state;
 }
 
 //Enumeration of states.
-enum SM3_States { SM3_Init, SM3_Wait, SM3_MoveUpOne, SM3_MoveUpTwo, SM3_MoveDown };
+enum SM3_States { SM3_Init, SM3_Wait, SM3_MoveUp, SM3_MoveDown };
 
 int SMTick3(int state) {
 	unsigned char button = ~PINA & 0x01;
@@ -209,28 +210,23 @@ int SMTick3(int state) {
 			state = SM3_Wait;
 			break;
 		case SM3_Wait:
-			if (button) { // if the button is pressed, turn on the motor
-				if (floorNumber == 1) {
-					state = SM3_MoveUpOne;
+			if (button) { // if the button is pressed, turn on the motor to move up
+				if (floorNumber == 2 && currentFloor == 1) { // check if I'm on the 1st floor before moving up
+					state = SM3_MoveUp;
+				}
+				else if (floorNumber == 1 && currentFloor == 2) { // check if I'm on the 2nd floor before moving down
+					state = SM3_MoveDown;
 				}
 				else {
-					state = SM3_MoveUpTwo;
+					state = SM3_Wait; // else, don't do anything
 				}
-			}
-			else {
-				state = SM3_Wait;
-			}
-			break;
-		case SM3_MoveUpTwo:
-			if (moveTime < 50) { // Turn on motor for 5 seconds
-				state = SM3_MoveUpTwo;
 			}
 			else {
 				state = SM3_Wait;
 			}
 			break;
 		case SM3_MoveUpOne:
-			if (moveTime < 20) { // Turn on motor for 5 seconds
+			if (moveTime < 30) { // Turn on motor for 3 seconds
 				state = SM3_MoveUpOne;
 			}
 			else {
@@ -244,15 +240,17 @@ int SMTick3(int state) {
 	}
 
 	switch (state) {
-		case SM3_MoveUpOne:
+		case SM3_MoveUp:
 			output3 = 1;
 			output4 = 0;
 			moveTime++;
+			currentFloor = 2; // Now I'm on the 2nd floor
 			break;
-		case SM3_MoveUpTwo:
-			output3 = 1;
-			output4 = 0;
+		case SM3_MoveDown:
+			output3 = 0;
+			output4 = 1;
 			moveTime++;
+			currentFloor = 1; // Now I'm on the 1st floor
 			break;
 		case SM3_Wait:
 			output3 = 0;
