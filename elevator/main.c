@@ -226,7 +226,7 @@ int SMTick3(int state) {
 			}
 			break;
 		case SM3_MoveUp :
-			if (moveTime < 20) { // Spin motor clockwise for 2 seconds
+			if (moveTime < 15) { // Spin motor clockwise for 1.5 seconds
 				state = SM3_MoveUp;
 			}
 			else {
@@ -234,7 +234,7 @@ int SMTick3(int state) {
 			}
 			break;
 		case SM3_MoveDown:
-			if (moveTime < 20) { // Spin motor counterclockwise for 2 seconds
+			if (moveTime < 5) { // Spin motor counterclockwise for 0.5 seconds
 				state = SM3_MoveDown;
 			}
 			else {

@@ -261,11 +261,11 @@ Disassembly of section .text:
  1ba:	a1 f5       	brne	.+104    	; 0x224 <SMTick3+0xaa>
  1bc:	24 c0       	rjmp	.+72     	; 0x206 <SMTick3+0x8c>
  1be:	80 91 2d 01 	lds	r24, 0x012D	; 0x80012d <moveTime>
- 1c2:	84 31       	cpi	r24, 0x14	; 20
+ 1c2:	8f 30       	cpi	r24, 0x0F	; 15
  1c4:	80 f0       	brcs	.+32     	; 0x1e6 <SMTick3+0x6c>
  1c6:	2e c0       	rjmp	.+92     	; 0x224 <SMTick3+0xaa>
  1c8:	80 91 2d 01 	lds	r24, 0x012D	; 0x80012d <moveTime>
- 1cc:	84 31       	cpi	r24, 0x14	; 20
+ 1cc:	85 30       	cpi	r24, 0x05	; 5
  1ce:	d8 f0       	brcs	.+54     	; 0x206 <SMTick3+0x8c>
  1d0:	29 c0       	rjmp	.+82     	; 0x224 <SMTick3+0xaa>
  1d2:	82 30       	cpi	r24, 0x02	; 2
